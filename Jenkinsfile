@@ -1,8 +1,9 @@
-def ProjectId="dtc-user5"
 pipeline{
     agent any
     environment {
-        Image_name = "gcr.io/${ProjectId}/internal-image:V_${BUILD_ID}"
+        Image_name = "poojadocker912/external-app:V_${BUILD_ID}"
+        docker_user = "poojadocker912"
+        docker_pass = "FEWsteps*2018"
     }
     stages{
         stage('dependancy versions'){
@@ -16,16 +17,15 @@ pipeline{
         }
         stage('git checkout'){
             steps{
-                    git 'https://github.com/dnizam/bootcamp-internal.git'
+                    git 'https://github.com/poojagit912/external-project.git'
             }    
         }
         stage('git test'){
             steps{
                 sh '''
-                    ls -a
-                    echo "install dependencies and test internal code ..!"
+                    echo "install dependencies and test external code ..!"
                     npm install
-                    npm test
+                   # npm test
                 ''' 
             }    
         }
@@ -33,17 +33,20 @@ pipeline{
             steps{
                 sh '''
                     echo "${Image_name}"
-                    echo "build and push docker image for internal app ..!"
-                    gcloud builds submit --tag ${Image_name} .
+                    echo "build and push docker image for external app ..!"
+                    docker build . -t ${Image_name}
+                    docker login --username ${docker_user} --password ${docker_pass}
+                    docker push ${Image_name}
                 ''' 
             }    
         }
-        stage('deploy'){
+         stage('deploy'){
             steps{
                 sh """
-                    gcloud container clusters get-credentials user5-kube-cluster --zone us-central1-c --project dtc-user5
-                    kubectl set image deployment/events-data events-data=${Image_name}
-                """
+                    gcloud container clusters get-credentials deployment-cluster --zone us-central1-c --project orbital-amulet-282713
+                    kubectl set image deployment/events-web events-web=${Image_name}
+                 """
+                //  #kubectl apply -f kube-config-external.yaml                  
             }    
         }  
     }
